@@ -1,0 +1,288 @@
+:root {
+  font-family: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  color: #1f2937;
+  background: #f4f6f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    linear-gradient(rgba(18, 32, 50, 0.72), rgba(18, 32, 50, 0.72)),
+    url("./assets/hero.png") center / cover;
+}
+
+.login-panel {
+  width: min(980px, 100%);
+  min-height: 520px;
+  display: grid;
+  grid-template-columns: 1.1fr 420px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+}
+
+.login-copy {
+  padding: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(135deg, rgba(10, 79, 120, 0.96), rgba(28, 49, 66, 0.94));
+  color: #e8f2f7;
+}
+
+.login-copy span {
+  width: fit-content;
+  padding: 4px 10px;
+  border: 1px solid rgba(232, 242, 247, 0.4);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.login-copy h1 {
+  margin: 18px 0 14px;
+  font-size: 38px;
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+.login-copy p,
+.page-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.login-copy p {
+  max-width: 480px;
+  color: #c6d8e2;
+}
+
+.login-form {
+  padding: 56px 42px;
+  align-self: center;
+}
+
+.login-form h2 {
+  margin: 0 0 24px;
+  font-size: 24px;
+}
+
+.login-form .el-button {
+  width: 100%;
+}
+
+.hint {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #17202b;
+  color: #d7dee8;
+  border-right: 1px solid #111827;
+}
+
+.brand {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #0ea5a6;
+  color: white;
+  font-weight: 700;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand small {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.nav-menu {
+  border-right: 0;
+  background: transparent;
+}
+
+.nav-menu .el-menu-item {
+  color: #cbd5e1;
+}
+
+.nav-menu .el-menu-item.is-active,
+.nav-menu .el-menu-item:hover {
+  color: #ffffff;
+  background: rgba(14, 165, 166, 0.18);
+}
+
+.topbar {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.topbar strong,
+.topbar span {
+  display: block;
+}
+
+.topbar span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.content {
+  padding: 28px;
+  background: #f4f6f8;
+}
+
+.page {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 22px;
+}
+
+.page-header h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.version-sections {
+  display: grid;
+  gap: 18px;
+}
+
+.version-band {
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.version-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: #64748b;
+}
+
+.el-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.el-dialog {
+  border-radius: 8px;
+}
+
+.el-upload {
+  width: 100%;
+}
+
+.el-upload-dragger {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .login-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .login-copy {
+    padding: 32px;
+  }
+
+  .login-copy h1 {
+    font-size: 30px;
+  }
+
+  .login-form {
+    padding: 32px;
+  }
+
+  .app-shell {
+    display: block;
+  }
+
+  .sidebar {
+    width: 100% !important;
+  }
+
+  .topbar,
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .content {
+    padding: 18px;
+  }
+}
