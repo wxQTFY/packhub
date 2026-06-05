@@ -27,12 +27,47 @@ npm run dev
 - 账号：admin
 - 密码：admin123
 
+## 局域网部署
+
+在部署电脑上执行：
+
+```bash
+npm install --include=dev
+npm run build
+npm start
+```
+
+启动后，同一局域网内的其他电脑访问：
+
+```text
+http://部署电脑IP:3001/
+```
+
+Windows 查看本机局域网 IP：
+
+```bat
+ipconfig
+```
+
+找到当前网卡的 `IPv4 地址`，例如 `192.168.1.20`，则访问地址为：
+
+```text
+http://192.168.1.20:3001/
+```
+
+如果其他电脑打不开，需要在 Windows 防火墙中放行 TCP 端口 `3001`，或执行：
+
+```bat
+netsh advfirewall firewall add rule name="PackHub 3001" dir=in action=allow protocol=TCP localport=3001
+```
+
 ## 常用命令
 
 ```bash
 npm run dev        # 同时启动前端和后端
 npm run dev:web    # 只启动 Vite 前端
 npm run server     # 只启动 Node 后端
+npm start          # 生产模式启动，托管 dist 前端和 API
 npm run build      # 前端类型检查和生产构建
 ```
 
@@ -57,3 +92,5 @@ src/
 - 使用对象存储或专用文件服务保存安装包
 - 将 `JWT_SECRET` 配置为强随机环境变量
 - 增加审计日志、上传校验、版本唯一性规则和下载统计
+
+更完整的优化规划见：[PackHub 优化方案](docs/optimization-roadmap.md)

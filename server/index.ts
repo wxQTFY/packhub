@@ -46,6 +46,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dataDir = path.join(__dirname, 'data');
 const uploadsDir = path.join(__dirname, 'uploads');
+const webDistDir = path.join(__dirname, '..', 'dist');
 const dbPath = path.join(dataDir, 'db.json');
 const jwtSecret = process.env.JWT_SECRET || 'packhub-dev-secret';
 const port = Number(process.env.PORT || 3001);
@@ -282,7 +283,14 @@ app.get('/api/packages/:id/download', auth, requirePermission('portal.download')
   res.download(path.join(uploadsDir, record.fileName), record.originalName);
 });
 
+if (existsSync(webDistDir)) {
+  app.use(express.static(webDistDir));
+  app.get(/.*/, (_req, res) => {
+    res.sendFile(path.join(webDistDir, 'index.html'));
+  });
+}
+
 app.listen(port, async () => {
   await readDb();
-  console.log(`PackHub API running at http://localhost:${port}`);
+  console.log(`PackHub running at http://0.0.0.0:${port}`);
 });
