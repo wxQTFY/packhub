@@ -25,7 +25,7 @@ function logout() {
       <el-menu router :default-active="$route.path" class="nav-menu">
         <el-menu-item v-if="auth.can('portal.download')" index="/downloads">
           <el-icon><Download /></el-icon>
-          <span>前台下载</span>
+          <span>软件下载</span>
         </el-menu-item>
         <el-menu-item v-if="auth.can('admin.software')" index="/admin/dashboard">
           <el-icon><DataBoard /></el-icon>

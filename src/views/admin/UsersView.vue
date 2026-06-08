@@ -19,7 +19,7 @@ const form = reactive({
 });
 
 const permissionOptions: Array<{ label: string; value: Permission }> = [
-  { label: '前台下载', value: 'portal.download' },
+  { label: '软件下载', value: 'portal.download' },
   { label: '用户管理', value: 'admin.users' },
   { label: '软件管理', value: 'admin.software' },
 ];
