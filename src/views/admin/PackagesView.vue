@@ -27,7 +27,7 @@ const form = reactive({
   description: '',
   version: '',
   channel: 'release' as VersionChannel,
-  category: '未分类',
+  category: '手术导航',
   tags: [] as string[],
   releaseNotes: '',
   stable: false,
@@ -82,7 +82,7 @@ function resetForm() {
     description: '',
     version: '',
     channel: 'release',
-    category: '未分类',
+    category: categories.value[0] || '手术导航',
     tags: [],
     releaseNotes: '',
     stable: false,
@@ -304,7 +304,7 @@ onMounted(loadPackages);
             </el-select>
           </el-form-item>
           <el-form-item label="软件分类">
-            <el-select v-model="form.category" allow-create filterable default-first-option>
+            <el-select v-model="form.category" filterable default-first-option>
               <el-option v-for="category in categories" :key="category" :label="category" :value="category" />
             </el-select>
           </el-form-item>

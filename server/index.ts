@@ -87,7 +87,8 @@ const port = Number(process.env.PORT || 3001);
 const maxUploadSize = Number(process.env.MAX_UPLOAD_MB || 1024) * 1024 * 1024;
 const permissions: Permission[] = ['portal.download', 'admin.users', 'admin.software'];
 const allowedChannels: VersionChannel[] = ['release', 'beta', 'history'];
-const defaultCategories = ['未分类', '手术导航', '教培系统', '星图', '星云', 'HoloLens导航', 'HoloLens星图'];
+const defaultCategories = ['手术导航', '智能教培'];
+const fallbackCategory = defaultCategories[0];
 
 let db: DatabaseSync;
 
@@ -174,7 +175,7 @@ function openDatabase() {
       description TEXT NOT NULL,
       version TEXT NOT NULL,
       channel TEXT NOT NULL,
-      category TEXT NOT NULL DEFAULT '未分类',
+      category TEXT NOT NULL DEFAULT '手术导航',
       tags TEXT NOT NULL DEFAULT '[]',
       release_notes TEXT NOT NULL DEFAULT '',
       stable INTEGER NOT NULL DEFAULT 0,
@@ -199,8 +200,19 @@ function openDatabase() {
       created_at TEXT NOT NULL,
       FOREIGN KEY(package_id) REFERENCES packages(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS categories (
+      name TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
   ensurePackageColumns();
+  ensureCategories();
   repairMojibakeFileNames();
 }
 
@@ -209,7 +221,7 @@ function ensurePackageColumns() {
     db.prepare('PRAGMA table_info(packages)').all().map((row) => String((row as Record<string, unknown>).name)),
   );
   const additions: Array<[string, string]> = [
-    ['category', "TEXT NOT NULL DEFAULT '未分类'"],
+    ['category', "TEXT NOT NULL DEFAULT '手术导航'"],
     ['tags', "TEXT NOT NULL DEFAULT '[]'"],
     ['release_notes', "TEXT NOT NULL DEFAULT ''"],
     ['stable', 'INTEGER NOT NULL DEFAULT 0'],
@@ -287,7 +299,7 @@ function mapPackage(row: Record<string, unknown>): SoftwarePackage {
     description: String(row.description),
     version: String(row.version),
     channel: row.channel as VersionChannel,
-    category: String(row.category || '未分类'),
+    category: String(row.category || fallbackCategory),
     tags: JSON.parse(String(row.tags || '[]')) as string[],
     releaseNotes: String(row.release_notes || ''),
     stable: Boolean(row.stable),
@@ -375,11 +387,46 @@ function normalizeTags(input: unknown) {
 }
 
 function listCategories() {
-  const savedCategories = db
-    .prepare("SELECT DISTINCT category FROM packages WHERE category != '' ORDER BY category ASC")
+  return db
+    .prepare('SELECT name FROM categories ORDER BY created_at ASC, name ASC')
     .all()
-    .map((row) => String((row as Record<string, unknown>).category));
-  return [...new Set([...defaultCategories, ...savedCategories])];
+    .map((row) => String((row as Record<string, unknown>).name));
+}
+
+function ensureCategories() {
+  const baseline = db.prepare("SELECT value FROM settings WHERE key = 'category-baseline-v2'").get() as Record<string, unknown> | undefined;
+  const now = new Date().toISOString();
+  runTransaction(() => {
+    const insertCategory = db.prepare('INSERT OR IGNORE INTO categories (name, created_at) VALUES (?, ?)');
+    for (const category of defaultCategories) insertCategory.run(category, now);
+    if (!baseline) {
+      db.prepare("UPDATE packages SET category = '智能教培' WHERE category = '教培系统'").run();
+      db.prepare(`DELETE FROM categories WHERE name NOT IN (${defaultCategories.map(() => '?').join(', ')})`).run(...defaultCategories);
+      db.prepare(`UPDATE packages SET category = ? WHERE category NOT IN (${defaultCategories.map(() => '?').join(', ')})`).run(
+        fallbackCategory,
+        ...defaultCategories,
+      );
+      db.prepare("INSERT INTO settings (key, value) VALUES ('category-baseline-v2', 'done')").run();
+    }
+  });
+}
+
+function categoryExists(name: string) {
+  return Boolean(db.prepare('SELECT name FROM categories WHERE name = ?').get(name));
+}
+
+function createCategory(name: string) {
+  const value = name.trim();
+  if (!value) throw new Error('分类名称不能为空');
+  db.prepare('INSERT INTO categories (name, created_at) VALUES (?, ?)').run(value, new Date().toISOString());
+}
+
+function deleteCategory(name: string) {
+  if (defaultCategories.includes(name)) throw new Error('默认分类不能删除');
+  runTransaction(() => {
+    db.prepare('UPDATE packages SET category = ? WHERE category = ?').run(fallbackCategory, name);
+    db.prepare('DELETE FROM categories WHERE name = ?').run(name);
+  });
 }
 
 function mapDownloadLog(row: Record<string, unknown>): DownloadLog {
@@ -388,7 +435,7 @@ function mapDownloadLog(row: Record<string, unknown>): DownloadLog {
     packageId: String(row.package_id),
     packageName: String(row.package_name || ''),
     packageVersion: String(row.package_version || ''),
-    packageCategory: String(row.package_category || '未分类'),
+    packageCategory: String(row.package_category || fallbackCategory),
     originalName: String(row.original_name || ''),
     userId: String(row.user_id),
     username: String(row.username),
@@ -579,7 +626,7 @@ async function migrateLegacyJson() {
         description: item.description,
         version: item.version,
         channel: item.channel,
-        category: item.category || '未分类',
+        category: item.category || fallbackCategory,
         tags: item.tags || [],
         releaseNotes: item.releaseNotes || item.description || '',
         stable: item.stable ?? item.channel === 'release',
@@ -813,6 +860,22 @@ app.get('/api/categories', auth, (_req, res) => {
   res.json({ categories: listCategories() });
 });
 
+app.post('/api/categories', auth, requirePermission('admin.software'), (req, res) => {
+  const { name } = req.body as { name?: string };
+  const value = name?.trim() || '';
+  if (!value) return res.status(400).json({ message: '分类名称不能为空' });
+  if (categoryExists(value)) return res.status(409).json({ message: '分类已存在' });
+  createCategory(value);
+  res.status(201).json({ categories: listCategories() });
+});
+
+app.delete('/api/categories/:name', auth, requirePermission('admin.software'), (req, res) => {
+  const name = decodeURIComponent(req.params.name || '').trim();
+  if (!name || !categoryExists(name)) return res.status(404).json({ message: '分类不存在' });
+  deleteCategory(name);
+  res.json({ categories: listCategories() });
+});
+
 app.get('/api/package-details/:id', auth, (req, res) => {
   const record = findPackageById(paramId(req));
   const user = res.locals.user as User;
@@ -828,6 +891,8 @@ app.post('/api/packages', auth, requirePermission('admin.software'), upload.sing
     const { name, description, version, channel, category, tags, releaseNotes, stable, archived, published } = req.body as Record<string, string>;
     if (!name || !version || !channel) throw new Error('名称、版本、类型不能为空');
     if (!allowedChannels.includes(channel as VersionChannel)) throw new Error('版本类型无效');
+    const selectedCategory = category?.trim() || fallbackCategory;
+    if (!categoryExists(selectedCategory)) throw new Error('软件分类不存在，请先在分类管理中添加');
     if (packageVersionExists(name, version)) {
       await fs.rm(filePath, { force: true });
       return res.status(409).json({ message: '同一软件下版本号不能重复' });
@@ -840,7 +905,7 @@ app.post('/api/packages', auth, requirePermission('admin.software'), upload.sing
       description: description || '',
       version: version.trim(),
       channel: channel as VersionChannel,
-      category: category?.trim() || '未分类',
+      category: selectedCategory,
       tags: normalizeTags(tags),
       releaseNotes: releaseNotes || '',
       stable: stable === 'true',
@@ -873,6 +938,9 @@ app.put('/api/packages/:id', auth, requirePermission('admin.software'), (req, re
   const nextVersion = version?.trim() || record.version;
   if (packageVersionExists(nextName, nextVersion, record.id)) {
     return res.status(409).json({ message: '同一软件下版本号不能重复' });
+  }
+  if (category !== undefined && !categoryExists(category.trim())) {
+    return res.status(400).json({ message: '软件分类不存在，请先在分类管理中添加' });
   }
   record.name = nextName;
   record.description = description ?? record.description;

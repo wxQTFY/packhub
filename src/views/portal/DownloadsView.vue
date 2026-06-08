@@ -19,7 +19,7 @@ const channelMeta: Record<VersionChannel, { label: string; description: string; 
   history: { label: '历史版本', description: '已归档版本，适用于回退和兼容场景。', type: 'info' },
 };
 
-const currentCategory = computed(() => String(route.params.category || '未分类'));
+const currentCategory = computed(() => String(route.params.category || '手术导航'));
 
 const filtered = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase();
