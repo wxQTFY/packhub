@@ -76,6 +76,24 @@ const allowedChannels: VersionChannel[] = ['release', 'beta', 'history'];
 
 let db: DatabaseSync;
 
+function countControlChars(value: string) {
+  return [...value].filter((char) => {
+    const code = char.charCodeAt(0);
+    return (code >= 0 && code <= 31) || (code >= 127 && code <= 159);
+  }).length;
+}
+
+function normalizeUploadedFileName(fileName: string) {
+  const value = path.basename(fileName || '').trim();
+  if (!value) return 'package.zip';
+
+  const decoded = Buffer.from(value, 'latin1').toString('utf8');
+  const hasMojibakeSignal = /[\u0080-\u009f]/.test(value) || /[ÃÂÄÅÆæ][\u0080-\u00bf]/.test(value);
+  const decodedLooksValid = decoded && !decoded.includes('\uFFFD') && countControlChars(decoded) < countControlChars(value);
+
+  return hasMojibakeSignal && decodedLooksValid ? decoded : value;
+}
+
 function ensureStorage() {
   for (const dir of [dataDir, uploadsDir, logsDir]) {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -168,6 +186,7 @@ function openDatabase() {
     );
   `);
   ensurePackageColumns();
+  repairMojibakeFileNames();
 }
 
 function ensurePackageColumns() {
@@ -184,6 +203,27 @@ function ensurePackageColumns() {
   for (const [column, definition] of additions) {
     if (!columns.has(column)) db.exec(`ALTER TABLE packages ADD COLUMN ${column} ${definition}`);
   }
+}
+
+function repairMojibakeFileNames() {
+  const updates = db
+    .prepare('SELECT id, original_name FROM packages')
+    .all()
+    .map((row) => {
+      const item = row as Record<string, unknown>;
+      const originalName = String(item.original_name);
+      const normalizedName = normalizeUploadedFileName(originalName);
+      return { id: String(item.id), originalName, normalizedName };
+    })
+    .filter((item) => item.normalizedName !== item.originalName);
+
+  if (!updates.length) return;
+
+  runTransaction(() => {
+    const statement = db.prepare('UPDATE packages SET original_name = ? WHERE id = ?');
+    for (const item of updates) statement.run(item.normalizedName, item.id);
+  });
+  logInfo(`已修复 ${updates.length} 条历史文件名编码`);
 }
 
 function runTransaction(action: () => void) {
@@ -223,7 +263,7 @@ function mapPackage(row: Record<string, unknown>): SoftwarePackage {
     stable: Boolean(row.stable),
     archived: Boolean(row.archived),
     fileName: String(row.file_name),
-    originalName: String(row.original_name),
+    originalName: normalizeUploadedFileName(String(row.original_name)),
     size: Number(row.size),
     sha256: String(row.sha256 || ''),
     downloadCount: Number(row.download_count || 0),
@@ -575,10 +615,12 @@ const upload = multer({
       cb(null, uploadsDir);
     },
     filename: (_req, file, cb) => {
-      cb(null, `${Date.now()}-${uuid()}${path.extname(file.originalname) || '.zip'}`);
+      const originalName = normalizeUploadedFileName(file.originalname);
+      cb(null, `${Date.now()}-${uuid()}${path.extname(originalName) || '.zip'}`);
     },
   }),
   fileFilter: (_req, file, cb) => {
+    file.originalname = normalizeUploadedFileName(file.originalname);
     if (path.extname(file.originalname).toLowerCase() !== '.zip') {
       cb(new Error('仅支持上传 .zip 安装包'));
       return;
@@ -715,7 +757,7 @@ app.post('/api/packages', auth, requirePermission('admin.software'), upload.sing
       stable: stable === 'true',
       archived: archived === 'true' || channel === 'history',
       fileName: req.file.filename,
-      originalName: req.file.originalname,
+      originalName: normalizeUploadedFileName(req.file.originalname),
       size: req.file.size,
       sha256: await fileSha256(filePath),
       downloadCount: 0,
