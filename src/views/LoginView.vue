@@ -9,7 +9,7 @@ const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
-const form = reactive({ username: 'admin', password: 'admin123' });
+const form = reactive({ username: '', password: '' });
 
 async function submit() {
   loading.value = true;
@@ -41,7 +41,6 @@ async function submit() {
           <el-input v-model="form.password" :prefix-icon="Lock" type="password" show-password size="large" placeholder="密码" />
         </el-form-item>
         <el-button type="primary" size="large" :loading="loading" native-type="submit">登录</el-button>
-        <p class="hint">默认管理员：admin / admin123</p>
       </el-form>
     </section>
   </main>
