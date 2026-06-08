@@ -122,6 +122,18 @@ function onFileChange(file: UploadFile) {
   selectedFile.value = file.raw || null;
 }
 
+function onStableChange(value: boolean) {
+  if (!value) return;
+  form.archived = false;
+  form.channel = 'release';
+}
+
+function onArchivedChange(value: boolean) {
+  if (!value) return;
+  form.stable = false;
+  form.channel = 'history';
+}
+
 async function savePackage() {
   if (!form.name.trim() || !form.version.trim()) {
     ElMessage.warning('软件名称和版本号不能为空');
@@ -315,8 +327,8 @@ onMounted(loadPackages);
         <el-progress v-if="saving && !editingId" :percentage="uploadProgress" />
         <div class="switch-row">
           <el-switch v-model="form.published" active-text="前台发布" />
-          <el-switch v-model="form.stable" active-text="当前稳定版" />
-          <el-switch v-model="form.archived" active-text="归档版本" />
+          <el-switch v-model="form.stable" active-text="当前稳定版" @change="onStableChange" />
+          <el-switch v-model="form.archived" active-text="归档版本" @change="onArchivedChange" />
         </div>
       </el-form>
       <template #footer>

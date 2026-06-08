@@ -226,6 +226,21 @@ function repairMojibakeFileNames() {
   logInfo(`已修复 ${updates.length} 条历史文件名编码`);
 }
 
+function repairPackageVersionStates() {
+  runTransaction(() => {
+    db.prepare(`
+      UPDATE packages
+      SET channel = 'history', stable = 0, archived = 1
+      WHERE archived = 1 OR channel = 'history'
+    `).run();
+    db.prepare(`
+      UPDATE packages
+      SET channel = 'release', archived = 0
+      WHERE stable = 1
+    `).run();
+  });
+}
+
 function runTransaction(action: () => void) {
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -422,6 +437,19 @@ function updatePackage(record: SoftwarePackage) {
   );
 }
 
+function normalizePackageVersionState(record: SoftwarePackage) {
+  if (record.archived || record.channel === 'history') {
+    record.channel = 'history';
+    record.stable = false;
+    record.archived = true;
+    return;
+  }
+  if (record.stable) {
+    record.channel = 'release';
+    record.archived = false;
+  }
+}
+
 function deletePackage(id: string) {
   db.prepare('DELETE FROM packages WHERE id = ?').run(id);
 }
@@ -563,6 +591,7 @@ async function cleanupOrphanUploads() {
 async function initializeDatabase() {
   openDatabase();
   await migrateLegacyJson();
+  repairPackageVersionStates();
   await ensureDefaultAdmin();
   ensureStablePackages();
   await backfillPackageHashes();
@@ -765,6 +794,7 @@ app.post('/api/packages', auth, requirePermission('admin.software'), upload.sing
       createdAt: new Date().toISOString(),
       published: published !== 'false',
     };
+    normalizePackageVersionState(record);
     insertPackage(record);
     if (record.stable) rollbackPackage(record);
     res.status(201).json({ package: record });
@@ -794,6 +824,7 @@ app.put('/api/packages/:id', auth, requirePermission('admin.software'), (req, re
   record.stable = stable ?? record.stable;
   record.archived = archived ?? record.archived;
   record.published = published ?? record.published;
+  normalizePackageVersionState(record);
   updatePackage(record);
   if (record.stable) rollbackPackage(record);
   res.json({ package: record });

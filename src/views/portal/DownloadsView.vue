@@ -36,7 +36,7 @@ const grouped = computed(() =>
   (Object.keys(channelMeta) as VersionChannel[]).map((channel) => ({
     channel,
     ...channelMeta[channel],
-    items: filtered.value.filter((item) => item.channel === channel),
+    items: filtered.value.filter((item) => (channel === 'history' ? item.archived : !item.archived && item.channel === channel)),
   })),
 );
 
