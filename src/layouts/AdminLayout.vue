@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DataBoard, Download, Files, SwitchButton, User } from '@element-plus/icons-vue';
+import { DataBoard, Download, Files, List, SwitchButton, User } from '@element-plus/icons-vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
@@ -34,6 +34,10 @@ function logout() {
         <el-menu-item v-if="auth.can('admin.software')" index="/admin/packages">
           <el-icon><Files /></el-icon>
           <span>软件版本</span>
+        </el-menu-item>
+        <el-menu-item v-if="auth.can('admin.software')" index="/admin/download-logs">
+          <el-icon><List /></el-icon>
+          <span>下载记录</span>
         </el-menu-item>
         <el-menu-item v-if="auth.can('admin.users')" index="/admin/users">
           <el-icon><User /></el-icon>

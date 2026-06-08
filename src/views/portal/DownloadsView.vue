@@ -1,28 +1,31 @@
 <script setup lang="ts">
 import { Download, Refresh, RefreshLeft, View } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { http } from '../../api/http';
 import type { SoftwarePackage, VersionChannel } from '../../types';
 
 const router = useRouter();
+const route = useRoute();
 const packages = ref<SoftwarePackage[]>([]);
 const categories = ref<string[]>([]);
 const loading = ref(false);
 const downloadState = reactive<Record<string, number>>({});
-const filters = reactive({ keyword: '', category: '', sort: 'stable' });
+const filters = reactive({ keyword: '', sort: 'stable' });
 const channelMeta: Record<VersionChannel, { label: string; description: string; type: 'success' | 'warning' | 'info' }> = {
-  release: { label: '发行版本', description: '正式发布版本，当前稳定版优先展示。', type: 'success' },
+  release: { label: '稳定版本', description: '正式发布版本，当前稳定版优先展示。', type: 'success' },
   beta: { label: '公测版本', description: '用于验证新功能，建议测试环境使用。', type: 'warning' },
   history: { label: '历史版本', description: '已归档版本，适用于回退和兼容场景。', type: 'info' },
 };
+
+const currentCategory = computed(() => String(route.params.category || '未分类'));
 
 const filtered = computed(() => {
   const keyword = filters.keyword.trim().toLowerCase();
   const result = packages.value.filter((item) => {
     const searchable = [item.name, item.version, item.description, item.category, ...item.tags].join(' ').toLowerCase();
-    return (!keyword || searchable.includes(keyword)) && (!filters.category || item.category === filters.category);
+    return (!keyword || searchable.includes(keyword)) && item.category === currentCategory.value;
   });
   return [...result].sort((a, b) => {
     if (filters.sort === 'downloads') return b.downloadCount - a.downloadCount;
@@ -84,27 +87,41 @@ async function downloadPackage(item: SoftwarePackage) {
 }
 
 function resetFilters() {
-  Object.assign(filters, { keyword: '', category: '', sort: 'stable' });
+  Object.assign(filters, { keyword: '', sort: 'stable' });
+}
+
+function openCategory(category: string) {
+  router.push(`/downloads/category/${encodeURIComponent(category)}`);
 }
 
 onMounted(loadPackages);
+
+watch(currentCategory, resetFilters);
 </script>
 
 <template>
   <section class="page">
     <div class="page-header">
       <div>
-        <h1>软件下载</h1>
-        <p>查找软件版本，查看更新说明并下载安装包。</p>
+        <h1>{{ currentCategory }}</h1>
+        <p>查看当前分类下的稳定版本、公测版本和历史版本。</p>
       </div>
       <el-button :icon="Refresh" @click="loadPackages">刷新</el-button>
     </div>
 
+    <div class="category-tabs">
+      <el-button
+        v-for="category in categories"
+        :key="category"
+        :type="category === currentCategory ? 'primary' : 'default'"
+        @click="openCategory(category)"
+      >
+        {{ category }}
+      </el-button>
+    </div>
+
     <div class="filter-bar portal-filters">
       <el-input v-model="filters.keyword" clearable placeholder="搜索软件、版本、标签" />
-      <el-select v-model="filters.category" clearable placeholder="全部分类">
-        <el-option v-for="category in categories" :key="category" :label="category" :value="category" />
-      </el-select>
       <el-select v-model="filters.sort" placeholder="排序">
         <el-option label="稳定版优先" value="stable" />
         <el-option label="最近上传" value="newest" />

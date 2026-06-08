@@ -48,6 +48,20 @@ interface SoftwarePackage {
   published: boolean;
 }
 
+interface DownloadLog {
+  id: string;
+  packageId: string;
+  packageName: string;
+  packageVersion: string;
+  packageCategory: string;
+  originalName: string;
+  userId: string;
+  username: string;
+  ip: string;
+  userAgent: string;
+  createdAt: string;
+}
+
 interface JsonDatabase {
   users: User[];
   packages: Array<
@@ -366,6 +380,46 @@ function listCategories() {
     .all()
     .map((row) => String((row as Record<string, unknown>).category));
   return [...new Set([...defaultCategories, ...savedCategories])];
+}
+
+function mapDownloadLog(row: Record<string, unknown>): DownloadLog {
+  return {
+    id: String(row.id),
+    packageId: String(row.package_id),
+    packageName: String(row.package_name || ''),
+    packageVersion: String(row.package_version || ''),
+    packageCategory: String(row.package_category || '未分类'),
+    originalName: String(row.original_name || ''),
+    userId: String(row.user_id),
+    username: String(row.username),
+    ip: String(row.ip || ''),
+    userAgent: String(row.user_agent || ''),
+    createdAt: String(row.created_at),
+  };
+}
+
+function listDownloadLogs() {
+  return db
+    .prepare(`
+      SELECT
+        download_logs.id,
+        download_logs.package_id,
+        download_logs.user_id,
+        download_logs.username,
+        download_logs.ip,
+        download_logs.user_agent,
+        download_logs.created_at,
+        packages.name AS package_name,
+        packages.version AS package_version,
+        packages.category AS package_category,
+        packages.original_name
+      FROM download_logs
+      INNER JOIN packages ON packages.id = download_logs.package_id
+      ORDER BY download_logs.created_at DESC
+      LIMIT 500
+    `)
+    .all()
+    .map((row) => mapDownloadLog(row as Record<string, unknown>));
 }
 
 function dashboardSummary() {
@@ -749,6 +803,10 @@ app.get('/api/packages', auth, requirePermission('admin.software'), (_req, res) 
 
 app.get('/api/dashboard', auth, requirePermission('admin.software'), (_req, res) => {
   res.json(dashboardSummary());
+});
+
+app.get('/api/download-logs', auth, requirePermission('admin.software'), (_req, res) => {
+  res.json({ logs: listDownloadLogs() });
 });
 
 app.get('/api/categories', auth, (_req, res) => {

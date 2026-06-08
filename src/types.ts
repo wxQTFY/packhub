@@ -31,6 +31,20 @@ export interface SoftwarePackage {
   published: boolean;
 }
 
+export interface DownloadLog {
+  id: string;
+  packageId: string;
+  packageName: string;
+  packageVersion: string;
+  packageCategory: string;
+  originalName: string;
+  userId: string;
+  username: string;
+  ip: string;
+  userAgent: string;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   totalPackages: number;
   publishedPackages: number;
