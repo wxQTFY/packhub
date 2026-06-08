@@ -73,6 +73,7 @@ const port = Number(process.env.PORT || 3001);
 const maxUploadSize = Number(process.env.MAX_UPLOAD_MB || 1024) * 1024 * 1024;
 const permissions: Permission[] = ['portal.download', 'admin.users', 'admin.software'];
 const allowedChannels: VersionChannel[] = ['release', 'beta', 'history'];
+const defaultCategories = ['未分类', '手术导航', '教培系统', '星图', '星云', 'HoloLens导航', 'HoloLens星图'];
 
 let db: DatabaseSync;
 
@@ -360,10 +361,11 @@ function normalizeTags(input: unknown) {
 }
 
 function listCategories() {
-  return db
+  const savedCategories = db
     .prepare("SELECT DISTINCT category FROM packages WHERE category != '' ORDER BY category ASC")
     .all()
     .map((row) => String((row as Record<string, unknown>).category));
+  return [...new Set([...defaultCategories, ...savedCategories])];
 }
 
 function dashboardSummary() {
