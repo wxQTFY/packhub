@@ -9,6 +9,8 @@
 - 上传 `.zip` 安装包，并归类为发行版本、公测版本、历史版本
 - 后台管理安装包发布状态，前台仅展示已发布版本
 - 用户登录后按权限查看下载入口并下载 zip 文件
+- 使用 SQLite 保存用户、安装包、下载统计和下载日志
+- 上传 zip 后校验文件内容并生成 SHA256，下载支持断点续传
 
 ## 启动
 
@@ -35,6 +37,14 @@ npm run dev
 npm install --include=dev
 npm run build
 npm start
+```
+
+生产环境建议先配置：
+
+```bash
+PORT=3001
+JWT_SECRET=replace-with-a-long-random-secret
+MAX_UPLOAD_MB=1024
 ```
 
 启动后，同一局域网内的其他电脑访问：
@@ -69,6 +79,8 @@ npm run dev:web    # 只启动 Vite 前端
 npm run server     # 只启动 Node 后端
 npm start          # 生产模式启动，托管 dist 前端和 API
 npm run build      # 前端类型检查和生产构建
+npm run pm2:start  # 使用 PM2 守护运行
+npm run pm2:logs   # 查看 PM2 日志
 ```
 
 ## 目录结构
@@ -76,8 +88,9 @@ npm run build      # 前端类型检查和生产构建
 ```text
 server/
   index.ts         # Express API、鉴权、上传和下载
-  data/db.json     # 本地 JSON 数据库，首次启动自动生成
+  data/packhub.sqlite # 本地 SQLite 数据库，首次启动自动生成
   uploads/         # zip 安装包存储目录
+logs/              # 应用、PM2、下载日志
 src/
   api/             # Axios 封装
   layouts/         # 登录后主布局
@@ -88,9 +101,9 @@ src/
 
 ## 后续生产化建议
 
-- 将 `server/data/db.json` 替换为 MySQL/PostgreSQL
+- 按部署环境配置强随机 `JWT_SECRET`
 - 使用对象存储或专用文件服务保存安装包
-- 将 `JWT_SECRET` 配置为强随机环境变量
-- 增加审计日志、上传校验、版本唯一性规则和下载统计
+- 增加版本唯一性规则和更完整的操作审计
 
 更完整的优化规划见：[PackHub 优化方案](docs/optimization-roadmap.md)
+部署细节见：[部署和运行稳定性](docs/deployment.md)

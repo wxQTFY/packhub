@@ -10,7 +10,12 @@
     "server": "tsx server/index.ts",
     "start": "tsx server/index.ts",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:restart": "pm2 restart packhub",
+    "pm2:stop": "pm2 stop packhub",
+    "pm2:status": "pm2 status packhub",
+    "pm2:logs": "pm2 logs packhub"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -22,6 +27,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "pinia": "^3.0.4",
+    "pm2": "^7.0.1",
     "uuid": "^14.0.0",
     "vue": "^3.5.34",
     "vue-router": "^4.6.4"

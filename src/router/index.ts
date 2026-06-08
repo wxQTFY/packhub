@@ -3,8 +3,10 @@ import { useAuthStore } from '../stores/auth';
 import type { Permission } from '../types';
 import AdminLayout from '../layouts/AdminLayout.vue';
 import LoginView from '../views/LoginView.vue';
+import DashboardView from '../views/admin/DashboardView.vue';
 import PackagesView from '../views/admin/PackagesView.vue';
 import UsersView from '../views/admin/UsersView.vue';
+import PackageDetailView from '../views/portal/PackageDetailView.vue';
 import DownloadsView from '../views/portal/DownloadsView.vue';
 
 const router = createRouter({
@@ -17,6 +19,8 @@ const router = createRouter({
       component: AdminLayout,
       children: [
         { path: 'downloads', component: DownloadsView, meta: { permission: 'portal.download' } },
+        { path: 'downloads/:id', component: PackageDetailView, meta: { permission: 'portal.download' } },
+        { path: 'admin/dashboard', component: DashboardView, meta: { permission: 'admin.software' } },
         { path: 'admin/users', component: UsersView, meta: { permission: 'admin.users' } },
         { path: 'admin/packages', component: PackagesView, meta: { permission: 'admin.software' } },
       ],

@@ -11,7 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
-server/data/db.json
+server/data/*
+!server/data/.gitkeep
 server/uploads/*
 !server/uploads/.gitkeep
 

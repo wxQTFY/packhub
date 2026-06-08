@@ -17,8 +17,28 @@ export interface SoftwarePackage {
   description: string;
   version: string;
   channel: VersionChannel;
+  category: string;
+  tags: string[];
+  releaseNotes: string;
+  stable: boolean;
+  archived: boolean;
   originalName: string;
   size: number;
+  sha256: string;
+  downloadCount: number;
+  lastDownloadedAt: string | null;
   createdAt: string;
   published: boolean;
+}
+
+export interface DashboardSummary {
+  totalPackages: number;
+  publishedPackages: number;
+  softwareCount: number;
+  categoryCount: number;
+  totalSize: number;
+  totalDownloads: number;
+  byChannel: Record<VersionChannel, number>;
+  recent: SoftwarePackage[];
+  popular: SoftwarePackage[];
 }
